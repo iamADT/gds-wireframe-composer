@@ -43,7 +43,7 @@ A **container** represents a single wireframe page. Two types exist:
 5. The user types a block type name (e.g. "header", "hero", "button") and presses **Enter** to add the block.
 6. A new block input appears below the newly added block, cursor already blinking, ready for the next block. The placeholder cycles through suggestions (e.g. `try "hero"`, `try "text"`, `try "button"`).
 7. This continues — the user keeps typing and pressing Enter to build the screen sequentially.
-8. At the bottom, below all block inputs, a persistent hint reads: **`Cmd+Enter` to create next screen** (or `Ctrl+Enter` on Windows).
+8. At the bottom of the composer a **"+ New screen"** button creates the next screen container. The button also shows the keyboard shortcut (`⌘+↵` / `Ctrl+↵`) for users who prefer not to reach for the mouse.
 
 **Other behaviors:**
 
@@ -273,7 +273,7 @@ The application is designed to be operated primarily from the keyboard.
 | `Tab` | Accept inline ghost completion (normal mode) or complete/append next block (Emmet mode) | Block input field |
 | `Escape` | Clear text or dismiss empty input | Block input field |
 | `↑` / `↓` | Navigate autocomplete suggestions | Block input with suggestions visible |
-| `Cmd+Enter` / `Ctrl+Enter` | Create a new screen container | Global |
+| `Cmd+Enter` / `Ctrl+Enter` | Create a new screen container (same as "+ New screen" button) | Global |
 | `↑` / `↓` | Navigate between blocks | When blocks exist (not in input) |
 | `Backspace` / `Delete` | Delete the selected block | When a block is selected (not in input) |
 | Double-click label | Begin editing the label | Composer block row |
@@ -281,7 +281,7 @@ The application is designed to be operated primarily from the keyboard.
 | `Enter` | Confirm edit | While editing a label (composer or preview) |
 | `Escape` | Cancel edit | While editing a label (composer or preview) |
 
-The **`Cmd+Enter` to create next screen** hint is always visible at the bottom of the block list so the user knows how to start a new container without leaving the keyboard.
+A **"+ New screen"** button is always visible at the bottom of the block list. It includes a `⌘+↵` / `Ctrl+↵` shortcut hint so keyboard users can create the next container without reaching for the mouse.
 
 ## 5. Technical Architecture
 
@@ -335,7 +335,7 @@ App
 │       ├── BlockRow[]     — existing blocks with inline label editing (drag-reorderable)
 │       ├── BlockInput     — auto-focused text field with placeholder + autocomplete
 │       ├── EllipsisMenu   — per-block context menu (duplicate, repeat, delete)
-│       └── NextScreenHint — "Cmd+Enter to create next screen" persistent footer
+│       └── NewScreenButton — "+ New screen" button with ⌘+↵ shortcut hint
 └── Right Panel (dark)
     └── Preview            — live wireframe canvas with inline text editing
         ├── BrowserChrome  — mock browser URL bar (service.gov.uk/...)

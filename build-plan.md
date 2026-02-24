@@ -28,7 +28,7 @@
 - [x] BlockRow — Icon, type label, editable name
 - [x] Double-click to edit label, Enter/Escape to confirm/cancel
 - [x] EllipsisMenu — Duplicate, Repeat (2/3/4), Delete
-- [x] NextScreenHint — Persistent Cmd+Enter footer
+- [x] NewScreenButton — "✚ New screen" button with ⌘+↵ shortcut hint; replaces text-only hint
 
 ## Phase 5: Preview + WireBlock Rendering ✅
 - [x] Preview — Dot-grid canvas, centered device frame with glass bevel

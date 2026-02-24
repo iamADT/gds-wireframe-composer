@@ -61,6 +61,7 @@ interface Props {
   onAddCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void;
   customTemplates: CustomTemplate[];
   onRegenerateBlock: (blockId: string, prompt: string) => Promise<void>;
+  onCreateNext: () => void;
 }
 
 export default function Composer({
@@ -79,6 +80,7 @@ export default function Composer({
   onAddCustomBlock,
   customTemplates,
   onRegenerateBlock,
+  onCreateNext,
 }: Props) {
   return (
     <div className="flex-1 flex flex-col">
@@ -153,21 +155,40 @@ export default function Composer({
         </AnimatePresence>
       </div>
 
-      {/* Next screen hint */}
+      {/* New screen button */}
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border-outer)' }}>
-        <p className="text-[11px] text-center" style={{ color: 'var(--text-tertiary)' }}>
+        <button
+          onClick={onCreateNext}
+          className="w-full rounded-xl text-sm"
+          style={{
+            padding: '8px 16px',
+            background: 'var(--glass-surface-2)',
+            border: '1px solid var(--border-outer)',
+            boxShadow: 'inset 0 0 0 1px var(--border-inner), inset 0 1px 0 0 var(--tint-blue)',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          <span>+ New screen</span>
           <kbd
-            className="rounded text-[10px] font-mono"
             style={{
-              padding: '2px 6px',
+              fontSize: 9,
+              padding: '1px 5px',
+              borderRadius: 3,
               background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--text-tertiary)',
+              fontFamily: 'inherit',
+              lineHeight: '16px',
             }}
           >
-            {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
-          </kbd>{' '}
-          to create next screen
-        </p>
+            {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+↵
+          </kbd>
+        </button>
       </div>
     </div>
   );

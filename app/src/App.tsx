@@ -128,6 +128,7 @@ export default function App() {
               onAddCustomBlock={store.addCustomBlock}
               customTemplates={store.customTemplates}
               onRegenerateBlock={handleRegenerateBlock}
+              onCreateNext={createNext}
             />
           )}
         </LeftPanel>
