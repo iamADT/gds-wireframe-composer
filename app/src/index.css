@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+/* ============================================
+   WIREFRAME COMPOSER — GLASS DESIGN TOKENS
+   From composer-visuals.md
+   ============================================ */
+
+:root {
+  /* 2.1 Base */
+  --bg-0: #070707;
+  --bg-0-bar: rgba(7, 7, 7, 0.75);
+
+  /* 2.2 Glass surfaces */
+  --glass-surface-1: rgba(255, 255, 255, 0.03);
+  --glass-surface-2: rgba(255, 255, 255, 0.04);
+  --glass-surface-hover: rgba(255, 255, 255, 0.07);
+  --glass-surface-pressed: rgba(255, 255, 255, 0.10);
+  --glass-surface-selected: rgba(255, 255, 255, 0.08);
+
+  /* 2.4 Borders */
+  --border-outer: rgba(255, 255, 255, 0.06);
+  --border-inner: rgba(255, 255, 255, 0.12);
+  --border-inner-elevated: rgba(255, 255, 255, 0.18);
+  --border-inner-selected: rgba(255, 255, 255, 0.25);
+  --border-dashed: rgba(255, 255, 255, 0.12);
+
+  /* 2.5 Cool tint tokens */
+  --tint-blue: rgba(140, 170, 255, 0.08);
+  --tint-blue-elevated: rgba(140, 170, 255, 0.12);
+  --tint-blue-strong: rgba(140, 170, 255, 0.25);
+  --tint-violet-strong: rgba(160, 140, 255, 0.20);
+
+  /* 2.6 Text */
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-tertiary: rgba(255, 255, 255, 0.45);
+  --text-placeholder: rgba(255, 255, 255, 0.35);
+
+  /* 9.1 Animation timing */
+  --duration-instant: 60ms;
+  --duration-fast: 100ms;
+  --duration-normal: 120ms;
+  --duration-hover-exit: 80ms;
+  --duration-select: 150ms;
+
+  /* 9.2 Easing */
+  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   GLASS CLASSES (Section 12 of visuals spec)
+   ============================================ */
+
+.glass {
+  background: var(--glass-surface-2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--border-outer);
+  box-shadow:
+    inset 0 0 0 1px var(--border-inner),
+    inset 0 1px 0 0 var(--tint-blue);
+  transition:
+    background var(--duration-normal) var(--ease-glass),
+    box-shadow var(--duration-normal) var(--ease-glass);
+}
+
+.glass:hover {
+  background: var(--glass-surface-hover);
+  transition-duration: var(--duration-hover-exit);
+}
+
+.glass-panel {
+  background: var(--glass-surface-1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--border-outer);
+  box-shadow:
+    inset 0 0 0 1px var(--border-inner),
+    inset 0 1px 0 0 var(--tint-blue);
+}
+
+.glass-elevated {
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px var(--border-inner-elevated),
+    inset 0 1px 0 0 var(--tint-blue-elevated),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.glass-selected {
+  background: var(--glass-surface-selected);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 0 0 1px var(--border-inner-selected),
+    inset 0 1px 0 0 var(--tint-blue-strong);
+}
+
+.glass-focus {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.20),
+    inset 0 1px 0 0 var(--tint-violet-strong),
+    0 0 0 2px var(--tint-violet-strong);
+}
+
+.glass-specular {
+  position: relative;
+}
+
+.glass-specular::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(140, 170, 255, 0.03) 20%,
+    transparent 50%
+  );
+}
+
+/* ============================================
+   GOV.UK WIRE PAGE (preview interior)
+   ============================================ */
+
+.wire-page {
+  background: #ffffff;
+  color: #0b0c0c;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ============================================
+   GLOBAL RESETS
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   BACKDROP-FILTER FALLBACK
+   ============================================ */
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background: rgba(20, 20, 20, 0.92);
+  }
+  .glass-panel {
+    background: rgba(15, 15, 15, 0.95);
+  }
+  .glass-elevated {
+    background: rgba(15, 15, 15, 0.97);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+  .glass-specular::before {
+    display: none;
+  }
+  .glass, .glass-panel, .glass-elevated {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
