@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Container, ContainerType, Block, BlockType, CustomLayout, CustomTemplate } from '../types';
+import type { Container, ContainerType, Block, BlockType, CustomLayout, CustomTemplate, CanvasNode, CanvasEdge } from '../types';
 import { BLOCK_TYPES } from '../types';
 
 function expandMacro(macroType: BlockType): Block[] {
@@ -73,6 +73,16 @@ export interface ComposerStore {
 
   addCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void;
   regenerateBlock: (blockId: string, layout: CustomLayout, prompt: string) => void;
+
+  canvasNodes: CanvasNode[];
+  canvasEdges: CanvasEdge[];
+  renameContainer:           (id: string, name: string) => void;
+  addCanvasNode:             (node: CanvasNode) => void;
+  updateCanvasNodePosition:  (id: string, position: { x: number; y: number }) => void;
+  removeCanvasNode:          (id: string) => void;
+  addCanvasEdge:             (edge: CanvasEdge) => void;
+  updateCanvasEdgeLabel:     (id: string, label: string) => void;
+  removeCanvasEdge:          (id: string) => void;
 }
 
 export function useComposerStore(): ComposerStore {
@@ -82,6 +92,8 @@ export function useComposerStore(): ComposerStore {
   const [blockInputVisible, setBlockInputVisible] = useState(false);
   const [blockInputValue, setBlockInputValue] = useState('');
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [canvasNodes, setCanvasNodes] = useState<CanvasNode[]>([]);
+  const [canvasEdges, setCanvasEdges] = useState<CanvasEdge[]>([]);
 
   const activeContainer = containers.find((c) => c.id === activeContainerId) ?? null;
 
@@ -303,6 +315,36 @@ export function useComposerStore(): ComposerStore {
   }, [activeContainerId, saveCustomTemplate]);
 
 
+  const renameContainer = useCallback((id: string, name: string) => {
+    if (!name.trim()) return;
+    setContainers(prev => prev.map(c => c.id === id ? { ...c, name: name.trim() } : c));
+  }, []);
+
+  const addCanvasNode = useCallback((node: CanvasNode) => {
+    setCanvasNodes(prev => [...prev.filter(n => n.id !== node.id), node]);
+  }, []);
+
+  const updateCanvasNodePosition = useCallback((id: string, position: { x: number; y: number }) => {
+    setCanvasNodes(prev => prev.map(n => n.id === id ? { ...n, position } : n));
+  }, []);
+
+  const removeCanvasNode = useCallback((id: string) => {
+    setCanvasNodes(prev => prev.filter(n => n.id !== id));
+    setCanvasEdges(prev => prev.filter(e => e.source !== id && e.target !== id));
+  }, []);
+
+  const addCanvasEdge = useCallback((edge: CanvasEdge) => {
+    setCanvasEdges(prev => [...prev, edge]);
+  }, []);
+
+  const updateCanvasEdgeLabel = useCallback((id: string, label: string) => {
+    setCanvasEdges(prev => prev.map(e => e.id === id ? { ...e, label } : e));
+  }, []);
+
+  const removeCanvasEdge = useCallback((id: string) => {
+    setCanvasEdges(prev => prev.filter(e => e.id !== id));
+  }, []);
+
   return {
     containers,
     activeContainerId,
@@ -334,5 +376,15 @@ export function useComposerStore(): ComposerStore {
 
     addCustomBlock,
     regenerateBlock,
+
+    canvasNodes,
+    canvasEdges,
+    renameContainer,
+    addCanvasNode,
+    updateCanvasNodePosition,
+    removeCanvasNode,
+    addCanvasEdge,
+    updateCanvasEdgeLabel,
+    removeCanvasEdge,
   };
 }

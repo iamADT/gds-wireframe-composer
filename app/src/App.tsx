@@ -7,6 +7,8 @@ import ContainerList from './components/ContainerList';
 import Composer from './components/Composer';
 import Preview from './components/Preview';
 import ConfirmDialog from './components/ConfirmDialog';
+import ConnectCanvas from './components/ConnectCanvas';
+import ConnectSidebar from './components/ConnectSidebar';
 import { useComposerStore } from './hooks/useComposerStore';
 import { useKeyboard } from './hooks/useKeyboard';
 import { getApiKey, generateBlockLayout } from './lib/generateBlock';
@@ -14,7 +16,7 @@ import { getApiKey, generateBlockLayout } from './lib/generateBlock';
 export default function App() {
   const store = useComposerStore();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [view, setView] = useState<'current' | 'screens'>('current');
+  const [view, setView] = useState<'current' | 'screens' | 'connect'>('current');
 
   const handleDeleteRequest = useCallback((id: string) => {
     const container = store.containers.find((c) => c.id === id);
@@ -81,6 +83,11 @@ export default function App() {
 
   useKeyboard(keyboardActions);
 
+  const placedNodeIds = useMemo(
+    () => new Set(store.canvasNodes.map((n) => n.id)),
+    [store.canvasNodes]
+  );
+
   return (
     <div className="h-full flex flex-col" style={{ background: 'var(--bg-0)' }}>
       <AppBar />
@@ -109,6 +116,15 @@ export default function App() {
               activeContainerId={store.activeContainerId}
               onSelect={(id) => { store.setActiveContainer(id); setView('current'); }}
               onDelete={handleDeleteRequest}
+              onRename={store.renameContainer}
+            />
+          )}
+          {view === 'connect' && store.containers.length > 0 && (
+            <ConnectSidebar
+              containers={store.containers}
+              placedNodeIds={placedNodeIds}
+              onAddNode={store.addCanvasNode}
+              onRename={store.renameContainer}
             />
           )}
           {view === 'current' && store.activeContainer && (
@@ -133,15 +149,31 @@ export default function App() {
           )}
         </LeftPanel>
 
-        <RightPanel>
-          <Preview
-            container={store.activeContainer}
-            selectedBlockId={store.selectedBlockId}
-            onSelectBlock={store.setSelectedBlock}
-            onUpdateBlockLabel={store.updateBlockLabel}
-            onUpdateBlockOptions={store.updateBlockOptions}
+        {view === 'connect' ? (
+          <ConnectCanvas
+            containers={store.containers}
+            canvasNodes={store.canvasNodes}
+            canvasEdges={store.canvasEdges}
+            onNodePositionChange={store.updateCanvasNodePosition}
+            onAddNode={store.addCanvasNode}
+            onRemoveNode={store.removeCanvasNode}
+            onAddEdge={store.addCanvasEdge}
+            onUpdateEdgeLabel={store.updateCanvasEdgeLabel}
+            onRemoveEdge={store.removeCanvasEdge}
+            onRename={store.renameContainer}
+            onOpenScreen={(id) => { store.setActiveContainer(id); setView('current'); }}
           />
-        </RightPanel>
+        ) : (
+          <RightPanel>
+            <Preview
+              container={store.activeContainer}
+              selectedBlockId={store.selectedBlockId}
+              onSelectBlock={store.setSelectedBlock}
+              onUpdateBlockLabel={store.updateBlockLabel}
+              onUpdateBlockOptions={store.updateBlockOptions}
+            />
+          </RightPanel>
+        )}
       </div>
     </div>
   );

@@ -174,6 +174,85 @@ html, body, #root {
    REDUCED MOTION
    ============================================ */
 
+/* ============================================
+   REACT FLOW OVERRIDES
+   ============================================ */
+
+.react-flow__node {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__background {
+  background: transparent;
+}
+
+.react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.25);
+}
+
+/* Invisible hit area — larger than the visible dot so cursor+drag activates early */
+.react-flow__handle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0;
+  cursor: crosshair !important;
+  transition: opacity 0.12s;
+}
+
+/* Visible dot drawn via pseudo-element, centered inside the hit area */
+.react-flow__handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(80, 140, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  transition: box-shadow 0.12s, border-color 0.12s;
+}
+
+/* Reveal when hovering the parent node */
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+
+.react-flow__node:hover .react-flow__handle::before {
+  box-shadow: 0 0 10px rgba(100, 160, 255, 0.6);
+}
+
+/* Intensify glow when cursor enters the hit area */
+.react-flow__handle:hover::before {
+  box-shadow: 0 0 18px rgba(100, 160, 255, 1), 0 0 6px rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Pulse the dot when a connection is in progress and this is a valid target */
+.react-flow__handle.connectingto {
+  opacity: 1;
+}
+
+.react-flow__handle.connectingto::before {
+  animation: handlePulse 0.7s ease-in-out infinite;
+}
+
+@keyframes handlePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(100, 160, 255, 0.7); }
+  50%       { box-shadow: 0 0 0 10px rgba(100, 160, 255, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0ms !important;

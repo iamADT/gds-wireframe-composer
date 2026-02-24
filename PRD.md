@@ -1,6 +1,6 @@
 # GDS Lo-Fi Composer — Product Requirements Document
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-02-24
 **Status:** Live
 
@@ -36,19 +36,21 @@ A **container** represents a single wireframe page. Two types exist:
 
 **Creation flow:**
 
-1. The user sees two options at the top of the composer: **Screen** and **Modal** (toggle or segmented control).
-2. The user selects a type and clicks the **Create** button.
+1. On first launch the user sees a **Screen / Modal** type dropdown and a **Start** button.
+2. The user selects a type and clicks **Start** (or presses Enter).
 3. The container is created, auto-named sequentially (Screen 1, Screen 2 ... Modal 1, Modal 2), and becomes the active container.
-4. Immediately after creation, the first **block input** appears below — an empty text field with a blinking cursor and a placeholder (e.g. `try "header"`). The user is ready to type without any extra clicks.
-5. The user types a block type name (e.g. "header", "hero", "button") and presses **Enter** to add the block.
-6. A new block input appears below the newly added block, cursor already blinking, ready for the next block. The placeholder cycles through suggestions (e.g. `try "hero"`, `try "text"`, `try "button"`).
-7. This continues — the user keeps typing and pressing Enter to build the screen sequentially.
-8. At the bottom of the composer a **"+ New screen"** button creates the next screen container. The button also shows the keyboard shortcut (`⌘+↵` / `Ctrl+↵`) for users who prefer not to reach for the mouse.
+4. Once at least one container exists, the dropdown and Start button are replaced by a single **`+ New screen`** button — the type selector is no longer shown.
+5. Immediately after creation, the first **block input** appears below — an empty text field with a blinking cursor and a placeholder (e.g. `try "header"`). The user is ready to type without any extra clicks.
+6. The user types a block type name (e.g. "header", "hero", "button") and presses **Enter** to add the block.
+7. A new block input appears below the newly added block, cursor already blinking, ready for the next block. The placeholder cycles through suggestions (e.g. `try "hero"`, `try "text"`, `try "button"`).
+8. This continues — the user keeps typing and pressing Enter to build the screen sequentially.
+9. At the bottom of the composer a **"+ New screen"** button creates the next screen container. The button also shows the keyboard shortcut (`⌘+↵` / `Ctrl+↵`) for users who prefer not to reach for the mouse.
 
 **Other behaviors:**
 
 - Container type can be changed after creation (screen ↔ modal); the name re-numbers automatically.
 - Containers are listed in a sidebar and switched with a single click.
+- Container names can be **renamed** by double-clicking the name in the Screens list or on a Connect canvas node. Enter confirms, Escape cancels.
 - The block input supports **fuzzy matching** — typing "head" suggests "header" and "heading", typing "nav" suggests "bottom-nav".
 - Pressing **Escape** in an empty block input dismisses it (no block added). Pressing Escape in a non-empty input clears the text.
 
@@ -294,6 +296,7 @@ A **"+ New screen"** button is always visible at the bottom of the block list. I
 | Build tool | Vite 7 |
 | Styling | Tailwind CSS 4 + CSS custom properties |
 | Animation | Framer Motion 12 |
+| Flow canvas | @xyflow/react (React Flow v12) |
 | ID generation | nanoid |
 
 ### 5.2 State Management
@@ -306,6 +309,8 @@ activeContainerId: string
 selectedBlockId: string | null
 blockInputVisible: boolean         // whether the block input field is showing
 blockInputValue: string            // current text in the block input
+canvasNodes: CanvasNode[]          // nodes placed on the Connect canvas
+canvasEdges: CanvasEdge[]          // edges on the Connect canvas
 ```
 
 Derived values (e.g. `activeContainer`, filtered autocomplete suggestions) are computed inline. All mutations flow through callback functions returned by the hook.
@@ -321,7 +326,7 @@ Block {
 }
 ```
 
-Additional store mutation: `updateBlockOptions(blockId, options)` — replaces the options array on a block.
+Additional store mutations include: `updateBlockOptions`, `renameContainer`, `addCanvasNode`, `updateCanvasNodePosition`, `removeCanvasNode`, `addCanvasEdge`, `updateCanvasEdgeLabel`, `removeCanvasEdge`. See `connect-canvas.md` section 11 for the full canvas action signatures.
 
 ### 5.3 Component Tree
 
@@ -329,17 +334,25 @@ Additional store mutation: `updateBlockOptions(blockId, options)` — replaces t
 App
 ├── Left Panel (dark)
 │   ├── AppBar             — title + shortcut hints
-│   ├── ContainerCreator   — Screen/Modal toggle + Create button + view switcher
-│   ├── ContainerList      — sidebar of screens/modals (view = "screens")
+│   ├── ContainerCreator   — view switcher (Current/Screens/Connect) + "+ New screen" button
+│   ├── ContainerList      — sidebar of screens/modals with inline rename (view = "screens")
+│   ├── ConnectSidebar     — "Screens to place" cards + "Screens on canvas" list + shapes (view = "connect")
 │   └── Composer           — block editor (view = "current")
 │       ├── BlockRow[]     — existing blocks with inline label editing (drag-reorderable)
 │       ├── BlockInput     — auto-focused text field with placeholder + autocomplete
 │       ├── EllipsisMenu   — per-block context menu (duplicate, repeat, delete)
 │       └── NewScreenButton — "+ New screen" button with ⌘+↵ shortcut hint
-└── Right Panel (dark)
+└── Right Panel (dark)  [hidden when view = "connect"]
     └── Preview            — live wireframe canvas with inline text editing
         ├── BrowserChrome  — mock browser URL bar (service.gov.uk/...)
         └── WireBlock      — renders individual GDS block types
+
+ConnectCanvas  [replaces Right Panel when view = "connect"]
+├── ReactFlow
+│   ├── ScreenNode[]       — glass card + scaled Preview + rename + Edit button
+│   ├── ShapeNode[]        — SVG oval/diamond/rect + editable label
+│   ├── StepEdge[]         — orthogonal edge + inline label editing
+│   └── CanvasToolbar      — floating +/−/⊡ zoom controls
 ```
 
 ### 5.4 Data Flow
@@ -350,10 +363,11 @@ All state originates in the store hook at the App level and flows down as props.
 
 ### 6.1 Layout
 
-A fixed two-panel split:
+A fixed two-panel split, with a third layout mode for the Connect view:
 
-- **Left panel (composer)** — Fixed-width dark panel. Contains the app bar, container creator, optional container list, and block composer.
-- **Right panel (preview)** — Flexible-width dark canvas. Centers a 1024px browser-chrome frame. Supports inline text editing on all blocks.
+- **Left panel (composer)** — Fixed-width dark panel. Contains the app bar, container creator, and view-dependent content: block composer (Current), screen list (Screens), or canvas sidebar (Connect).
+- **Right panel (preview)** — Flexible-width dark canvas. Centers a 1024px browser-chrome frame. Supports inline text editing on all blocks. Hidden when Connect view is active.
+- **Connect canvas** — Replaces the right panel when the Connect tab is active. Near-infinite pannable/zoomable canvas powered by React Flow. See `connect-canvas.md` for full specification.
 
 **Full-bleed vs. constrained layout:**
 
@@ -393,7 +407,7 @@ Visual specifications (color tokens, spacing, radii, typography scales, animatio
 
 These items are out of scope for the current version but represent likely next steps:
 
-- **Screen linking / flow arrows** to connect containers into a user flow diagram.
+- ~~**Screen linking / flow arrows**~~ — shipped as the Connect Canvas (see `connect-canvas.md`).
 - **Export** — PNG, SVG, or shareable URL.
 - **Additional block types** — image placeholder, icon, divider, list item, card, toggle, checkbox, radio.
 - **Additional macros** — signup form, settings page, onboarding carousel.

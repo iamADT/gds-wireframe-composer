@@ -83,6 +83,23 @@ export interface Container {
   blocks: Block[];
 }
 
+export interface CanvasNode {
+  id: string;
+  kind: 'screen' | 'shape';
+  shapeType?: 'start-end' | 'decision' | 'process';
+  position: { x: number; y: number };
+  label?: string;
+}
+
+export interface CanvasEdge {
+  id: string;
+  source: string;
+  sourceHandle: 'top' | 'right' | 'bottom' | 'left';
+  target: string;
+  targetHandle: 'top' | 'right' | 'bottom' | 'left';
+  label?: string;
+}
+
 export const BLOCK_TYPES: BlockTypeInfo[] = [
   { type: 'task-list',        icon: '☑', defaultLabel: 'Your application',       description: 'Task list with section heading and status tags',             isMacro: false },
   { type: 'tabs',             icon: '⊟', defaultLabel: 'Tabs',                  description: 'Tabbed content panel',                                       isMacro: false },

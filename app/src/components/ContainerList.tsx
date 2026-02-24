@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Container } from '../types';
 
 interface Props {
@@ -6,11 +6,33 @@ interface Props {
   activeContainerId: string | null;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
 }
 
-export default function ContainerList({ containers, activeContainerId, onSelect, onDelete }: Props) {
+export default function ContainerList({ containers, activeContainerId, onSelect, onDelete, onRename }: Props) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   if (containers.length === 0) return null;
+
+  function startEdit(id: string, name: string) {
+    setEditingId(id);
+    setEditingValue(name);
+    setTimeout(() => inputRef.current?.select(), 0);
+  }
+
+  function commitEdit() {
+    if (editingId) {
+      onRename(editingId, editingValue);
+      setEditingId(null);
+    }
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
 
   return (
     <div>
@@ -53,7 +75,38 @@ export default function ContainerList({ containers, activeContainerId, onSelect,
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{container.name}</p>
+                {editingId === container.id ? (
+                  <input
+                    ref={inputRef}
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+                      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-sm font-medium w-full"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: 4,
+                      padding: '1px 4px',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <p
+                    className="text-sm font-medium truncate"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      startEdit(container.id, container.name);
+                    }}
+                  >
+                    {container.name}
+                  </p>
+                )}
                 <p className="text-[11px] tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
                   {container.blocks.length} block{container.blocks.length !== 1 ? 's' : ''}
                 </p>
