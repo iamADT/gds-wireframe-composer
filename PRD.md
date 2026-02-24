@@ -149,7 +149,6 @@ Block operations:
 - **Select** — Click or arrow-key to a block; selection syncs between composer and preview.
 - **Edit label** — Double-click the label text in the composer or double-click text in the preview; confirm with Enter, cancel with Escape.
 - **Duplicate** — Creates an identical copy immediately after the original.
-- **Repeat** — Insert 2, 3, or 4 copies (via ellipsis menu submenu).
 - **Delete** — Remove the selected block with Backspace/Delete.
 
 ### 4.3 Macros

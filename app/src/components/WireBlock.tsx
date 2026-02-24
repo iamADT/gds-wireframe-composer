@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Block } from '../types';
+import type { Block, CustomPrimitive, CustomLayout } from '../types';
 import EditableText from './EditableText';
 
 interface Props {
@@ -1353,6 +1353,185 @@ function WireGdsFooter({ block: _block }: { block: Block; onUpdateLabel: (l: str
   );
 }
 
+// ─── Custom block renderer ────────────────────────────────────────────────────
+
+function renderPrimitive(p: CustomPrimitive): React.ReactNode {
+  switch (p.type) {
+    case 'row':
+      return (
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          {(p.items ?? []).map((child, i) => (
+            <div key={i} style={{ flex: child.width != null ? child.width : 1 }}>
+              {renderPrimitive(child)}
+            </div>
+          ))}
+        </div>
+      );
+
+    case 'column':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(p.items ?? []).map((child, i) => (
+            <div key={i}>{renderPrimitive(child)}</div>
+          ))}
+        </div>
+      );
+
+    case 'stat-card':
+      return (
+        <div style={{ border: `1px solid ${C.greyLine}`, padding: 12, borderRadius: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.black, marginBottom: 6 }}>{p.label ?? ''}</div>
+          <div style={{ height: 8, background: C.grey2, borderRadius: 2, width: '60%' }} />
+        </div>
+      );
+
+    case 'chart-placeholder': {
+      const h = p.height ?? 160;
+      return (
+        <div style={{ background: C.grey1, border: `1px solid ${C.greyLine}`, height: h, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <span style={{ fontSize: 11, color: C.grey3, fontFamily: 'Arial, sans-serif' }}>{p.label ?? ''}</span>
+        </div>
+      );
+    }
+
+    case 'table': {
+      const cols = p.columns ?? [];
+      const rowCount = p.rows ?? 3;
+      return (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr>
+              {cols.map((col, i) => (
+                <th key={i} style={{ textAlign: 'left', padding: '6px 8px', borderBottom: `2px solid ${C.black}`, color: C.black, fontWeight: 700 }}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rowCount }).map((_, ri) => (
+              <tr key={ri} style={{ borderBottom: `1px solid ${C.greyLine}` }}>
+                {cols.map((_, ci) => (
+                  <td key={ci} style={{ padding: '8px 8px' }}>
+                    <div style={{ height: 8, background: C.grey2, borderRadius: 2, width: `${70 + ((ri * 3 + ci * 7) % 25)}%` }} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    case 'text-line':
+      return (
+        <div style={{ height: 8, background: C.grey2, borderRadius: 2, width: `${p.width ?? 100}%` }} />
+      );
+
+    case 'text-block':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[100, 95, 88, 65].map((w, i) => (
+            <div key={i} style={{ height: 8, background: C.grey2, borderRadius: 2, width: `${w}%` }} />
+          ))}
+        </div>
+      );
+
+    case 'image-placeholder': {
+      const h = p.height ?? 120;
+      return (
+        <div style={{ background: C.grey1, border: `1px solid ${C.greyLine}`, height: h, borderRadius: 2, position: 'relative', overflow: 'hidden' }}>
+          <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+            <line x1="0" y1="0" x2="100%" y2="100%" stroke={C.greyLine} strokeWidth="1" />
+            <line x1="100%" y1="0" x2="0" y2="100%" stroke={C.greyLine} strokeWidth="1" />
+          </svg>
+        </div>
+      );
+    }
+
+    case 'tag':
+      return (
+        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 100, background: C.grey1, border: `1px solid ${C.greyLine}`, fontSize: 11, color: C.black, fontFamily: 'Arial, sans-serif' }}>
+          {p.label ?? ''}
+        </span>
+      );
+
+    case 'badge': {
+      const badgeColors: Record<string, { bg: string; text: string; dot: string }> = {
+        grey:  { bg: C.grey1,   text: C.grey3,   dot: C.grey3 },
+        blue:  { bg: '#d2e4f4', text: C.black,   dot: C.blue },
+        green: { bg: '#cce2d8', text: '#10572e', dot: '#0f7a52' },
+        red:   { bg: '#f4d3d3', text: '#8c2424', dot: '#ca3535' },
+      };
+      const palette = badgeColors[p.color ?? 'grey'] ?? badgeColors.grey;
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: palette.text, fontFamily: 'Arial, sans-serif' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: palette.dot, flexShrink: 0 }} />
+          {p.label ?? ''}
+        </span>
+      );
+    }
+
+    case 'divider':
+      return <div style={{ borderTop: `1px solid ${C.greyLine}`, width: '100%' }} />;
+
+    case 'label':
+      return (
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.black, fontFamily: 'Arial, sans-serif' }}>
+          {p.text ?? ''}
+        </div>
+      );
+
+    case 'button':
+      return (
+        <div
+          className="inline-block font-bold"
+          style={{ padding: '8px 16px', background: C.green, color: C.white, boxShadow: `0 3px 0 ${C.greenDark}`, fontSize: 19, cursor: 'default', fontFamily: 'Arial, sans-serif' }}
+        >
+          {p.label ?? 'Continue'}
+        </div>
+      );
+
+    case 'button-secondary':
+      return (
+        <div
+          className="inline-block font-bold"
+          style={{ padding: '8px 16px', background: C.grey1, color: C.black, boxShadow: `0 3px 0 ${C.grey2}`, fontSize: 19, cursor: 'default', fontFamily: 'Arial, sans-serif' }}
+        >
+          {p.label ?? 'Cancel'}
+        </div>
+      );
+
+    case 'button-warning':
+      return (
+        <div
+          className="inline-block font-bold"
+          style={{ padding: '8px 16px', background: C.red, color: C.white, boxShadow: `0 3px 0 ${C.redDark}`, fontSize: 19, cursor: 'default', fontFamily: 'Arial, sans-serif' }}
+        >
+          {p.label ?? 'Delete'}
+        </div>
+      );
+
+    default:
+      return null;
+  }
+}
+
+function CustomBlockRenderer({ block }: { block: Block }) {
+  const layout: CustomLayout = block.customLayout ?? [];
+  return (
+    <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.greyLine}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.black }}>{block.label}</span>
+        <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: C.grey1, border: `1px solid ${C.greyLine}`, color: C.grey3 }}>custom</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {layout.map((p, i) => (
+          <div key={i}>{renderPrimitive(p)}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function WireBlock({ block, isSelected, onSelect, onUpdateLabel, onUpdateOptions }: Props) {
   const renderBlock = () => {
@@ -1389,6 +1568,7 @@ export default function WireBlock({ block, isSelected, onSelect, onUpdateLabel, 
       case 'panel':               return <WirePanel block={block} onUpdateLabel={onUpdateLabel} />;
       case 'service-nav':         return <WireServiceNav block={block} onUpdateLabel={onUpdateLabel} onUpdateOptions={onUpdateOptions} />;
       case 'gds-footer':          return <WireGdsFooter block={block} onUpdateLabel={onUpdateLabel} />;
+      case 'custom':              return <CustomBlockRenderer block={block} />;
       default:                    return null;
     }
   };

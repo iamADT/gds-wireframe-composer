@@ -213,6 +213,15 @@ Primitive types:
 
   { "type": "label", "text": string }
     Small bold section heading in GOV.UK black.
+
+  { "type": "button", "label": string }
+    GOV.UK primary green button. Use for the main call-to-action (e.g. "Search", "Continue", "Submit").
+
+  { "type": "button-secondary", "label": string }
+    GOV.UK secondary button (grey). Use for cancel or alternative actions.
+
+  { "type": "button-warning", "label": string }
+    GOV.UK warning button (red). Use only for destructive actions (e.g. "Delete").
 ```
 
 #### 4.3.2 User message
@@ -287,6 +296,9 @@ The renderer supports a fixed vocabulary. This keeps rendering deterministic —
 | `badge` | Small coloured dot + `label`; `color` property accepts `grey`, `blue`, `green`, `red` |
 | `divider` | Full-width 1px horizontal rule in `#cecece` |
 | `label` | Small bold text label in GOV.UK black; used for section headings within a layout |
+| `button` | GOV.UK primary green button (`#0f7a52` fill, 3px bottom shadow); `label` is the button text |
+| `button-secondary` | GOV.UK secondary button (grey fill, grey shadow); `label` is the button text |
+| `button-warning` | GOV.UK warning button (`#ca3535` fill, red shadow); `label` is the button text |
 
 ---
 
@@ -338,6 +350,8 @@ interface CustomTemplate {
 ```
 
 Templates appear in the block autocomplete under a **"Custom"** section when the user types text that matches a template label. Selecting one inserts a new block with that `customLayout` — identical to the original. The inserted copy is independent (regenerating one does not affect others).
+
+**Auto-save behaviour:** Templates are saved automatically on generation — there is no manual "save" step. The registry uses an upsert-by-label strategy: if a template with the same label already exists it is replaced. This means generating the same description twice, or regenerating a block, always keeps the registry at one entry per label reflecting the most recent result. Templates are session-only (no localStorage persistence).
 
 ---
 
@@ -406,8 +420,8 @@ All primitives use the GOV.UK grey palette (`#f4f8fb` fill, `#b1b4b6` bars, `#ce
 
 Custom blocks expose two additional options in their ellipsis menu:
 
-- **"Regenerate"** — re-sends the original `customPrompt` to Claude and replaces the block's `customLayout` with the new result. The block label is preserved.
-- **"Edit and regenerate"** — opens a small inline input pre-populated with `customPrompt`. User edits the description and presses Enter to re-generate. Also updates the stored template.
+- **"Regenerate"** — re-sends the original `customPrompt` to Claude and replaces the block's `customLayout` with the new result. The block label is preserved. The session template is automatically updated (upsert by label) so the registry reflects the latest layout.
+- **"Edit and regenerate"** — opens a small inline input pre-populated with `customPrompt`. User edits the description and presses Enter to re-generate. Also upserts the session template.
 
 There is **no per-primitive editing in v1**. The user can only delete or regenerate the block as a whole.
 
@@ -432,16 +446,17 @@ All error states display for 3 seconds then return the input to normal mode.
 ## 11. State additions
 
 ```ts
-// useComposerStore
+// useComposerStore additions
 customTemplates: CustomTemplate[]
-isGenerating: boolean
 
-generateBlock: (description: string) => Promise<void>
-regenerateBlock: (blockId: string, newPrompt?: string) => Promise<void>
-saveCustomTemplate: (template: CustomTemplate) => void
+addCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void
+  // adds block to active container + upserts session template
+
+regenerateBlock: (blockId: string, layout: CustomLayout, prompt: string) => void
+  // atomically updates block's customLayout + customPrompt + upserts session template
 ```
 
-`blockInputMode` is extended from v2-features.md: `'normal' | 'ai' | 'generate'`.
+`isGenerating` is local state in `BlockInput`, not in the store. `saveCustomTemplate` is internal to the store (not exposed publicly).
 
 ---
 

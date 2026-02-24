@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Container, ContainerType, Block, BlockType } from '../types';
+import type { Container, ContainerType, Block, BlockType, CustomLayout, CustomTemplate } from '../types';
 import { BLOCK_TYPES } from '../types';
 
 function expandMacro(macroType: BlockType): Block[] {
@@ -48,6 +48,7 @@ export interface ComposerStore {
   selectedBlockId: string | null;
   blockInputVisible: boolean;
   blockInputValue: string;
+  customTemplates: CustomTemplate[];
 
   activeContainer: Container | null;
 
@@ -62,13 +63,15 @@ export interface ComposerStore {
   updateBlockOptions: (blockId: string, options: string[]) => void;
   deleteBlock: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
-  repeatBlock: (blockId: string, count: number) => void;
   setSelectedBlock: (blockId: string | null) => void;
 
   reorderBlocks: (containerId: string, newBlocks: Block[]) => void;
 
   setBlockInputVisible: (visible: boolean) => void;
   setBlockInputValue: (value: string) => void;
+
+  addCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void;
+  regenerateBlock: (blockId: string, layout: CustomLayout, prompt: string) => void;
 }
 
 export function useComposerStore(): ComposerStore {
@@ -77,6 +80,7 @@ export function useComposerStore(): ComposerStore {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [blockInputVisible, setBlockInputVisible] = useState(false);
   const [blockInputValue, setBlockInputValue] = useState('');
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
 
   const activeContainer = containers.find((c) => c.id === activeContainerId) ?? null;
 
@@ -209,22 +213,6 @@ export function useComposerStore(): ComposerStore {
     );
   }, []);
 
-  const repeatBlock = useCallback((blockId: string, count: number) => {
-    setContainers((prev) =>
-      prev.map((c) => {
-        const idx = c.blocks.findIndex((b) => b.id === blockId);
-        if (idx === -1) return c;
-        const original = c.blocks[idx];
-        const copies: Block[] = Array.from({ length: count }, () => ({
-          ...original,
-          id: nanoid(),
-        }));
-        const blocks = [...c.blocks];
-        blocks.splice(idx + 1, 0, ...copies);
-        return { ...c, blocks };
-      })
-    );
-  }, []);
 
   const setSelectedBlockCb = useCallback((blockId: string | null) => {
     setSelectedBlockId(blockId);
@@ -245,12 +233,61 @@ export function useComposerStore(): ComposerStore {
     setBlockInputValue(value);
   }, []);
 
+  const saveCustomTemplate = useCallback((template: CustomTemplate) => {
+    setCustomTemplates((prev) => {
+      const filtered = prev.filter((t) => t.label !== template.label);
+      return [...filtered, template];
+    });
+  }, []);
+
+  const regenerateBlock = useCallback((blockId: string, layout: CustomLayout, prompt: string) => {
+    setContainers((prev) => {
+      const updated = prev.map((c) => ({
+        ...c,
+        blocks: c.blocks.map((b) => b.id === blockId ? { ...b, customLayout: layout, customPrompt: prompt } : b),
+      }));
+      for (const c of updated) {
+        const block = c.blocks.find((b) => b.id === blockId);
+        if (block) {
+          saveCustomTemplate({ id: nanoid(), label: block.label, layout, prompt });
+          break;
+        }
+      }
+      return updated;
+    });
+  }, [saveCustomTemplate]);
+
+  const addCustomBlock = useCallback((label: string, layout: CustomLayout, prompt: string) => {
+    const id = nanoid();
+    const block: Block = { id, type: 'custom', label, customLayout: layout, customPrompt: prompt };
+    setContainers((prev) =>
+      prev.map((c) =>
+        c.id === activeContainerId
+          ? { ...c, blocks: [...c.blocks, block] }
+          : c
+      )
+    );
+    setSelectedBlockId(id);
+    setBlockInputValue('');
+    saveCustomTemplate({ id: nanoid(), label, layout, prompt });
+  }, [activeContainerId, saveCustomTemplate]);
+
+  const updateBlockCustomLayout = useCallback((blockId: string, layout: CustomLayout) => {
+    setContainers((prev) =>
+      prev.map((c) => ({
+        ...c,
+        blocks: c.blocks.map((b) => (b.id === blockId ? { ...b, customLayout: layout } : b)),
+      }))
+    );
+  }, []);
+
   return {
     containers,
     activeContainerId,
     selectedBlockId,
     blockInputVisible,
     blockInputValue,
+    customTemplates,
 
     activeContainer,
 
@@ -265,12 +302,14 @@ export function useComposerStore(): ComposerStore {
     updateBlockOptions,
     deleteBlock,
     duplicateBlock,
-    repeatBlock,
     setSelectedBlock: setSelectedBlockCb,
 
     reorderBlocks,
 
     setBlockInputVisible: setBlockInputVisibleCb,
     setBlockInputValue: setBlockInputValueCb,
+
+    addCustomBlock,
+    regenerateBlock,
   };
 }

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
 import type { DragControls } from 'framer-motion';
-import type { Container, Block, BlockType } from '../types';
+import type { Container, Block, BlockType, CustomLayout, CustomTemplate } from '../types';
 import BlockRow from './BlockRow';
 import BlockInput from './BlockInput';
 
@@ -22,7 +22,7 @@ interface DraggableBlockProps {
   onUpdateLabel: (label: string) => void;
   onDelete: () => void;
   onDuplicate: () => void;
-  onRepeat: (count: number) => void;
+  onRegenerate?: (prompt: string) => Promise<void>;
 }
 
 function DraggableBlock({ block, ...blockRowProps }: DraggableBlockProps) {
@@ -55,9 +55,11 @@ interface Props {
   onUpdateBlockLabel: (id: string, label: string) => void;
   onDeleteBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
-  onRepeatBlock: (id: string, count: number) => void;
   onDismissInput: () => void;
   onReorderBlocks: (newBlocks: Block[]) => void;
+  onAddCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void;
+  customTemplates: CustomTemplate[];
+  onRegenerateBlock: (blockId: string, prompt: string) => Promise<void>;
 }
 
 export default function Composer({
@@ -70,9 +72,11 @@ export default function Composer({
   onUpdateBlockLabel,
   onDeleteBlock,
   onDuplicateBlock,
-  onRepeatBlock,
   onDismissInput,
   onReorderBlocks,
+  onAddCustomBlock,
+  customTemplates,
+  onRegenerateBlock,
 }: Props) {
   return (
     <div className="flex-1 flex flex-col">
@@ -116,7 +120,7 @@ export default function Composer({
                 onUpdateLabel={(label) => onUpdateBlockLabel(block.id, label)}
                 onDelete={() => onDeleteBlock(block.id)}
                 onDuplicate={() => onDuplicateBlock(block.id)}
-                onRepeat={(count) => onRepeatBlock(block.id, count)}
+                onRegenerate={block.type === 'custom' ? (prompt) => onRegenerateBlock(block.id, prompt) : undefined}
               />
             ))}
           </AnimatePresence>
@@ -137,6 +141,9 @@ export default function Composer({
                 existingBlocks={container.blocks}
                 onDismiss={onDismissInput}
                 placeholderIndex={container.blocks.length}
+                onAddCustomBlock={onAddCustomBlock}
+                customTemplates={customTemplates}
+                containerType={container.type}
               />
             </motion.div>
           )}

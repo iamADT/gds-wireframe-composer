@@ -9,6 +9,7 @@ import Preview from './components/Preview';
 import ConfirmDialog from './components/ConfirmDialog';
 import { useComposerStore } from './hooks/useComposerStore';
 import { useKeyboard } from './hooks/useKeyboard';
+import { getApiKey, generateBlockLayout } from './lib/generateBlock';
 
 export default function App() {
   const store = useComposerStore();
@@ -56,6 +57,21 @@ export default function App() {
   const createNext = useCallback(() => {
     store.createContainer('screen');
   }, [store.createContainer]);
+
+  const handleRegenerateBlock = useCallback(async (blockId: string, prompt: string) => {
+    const key = getApiKey();
+    if (!key) return;
+    const container = store.activeContainer;
+    if (!container) return;
+    const block = container.blocks.find((b) => b.id === blockId);
+    if (!block) return;
+    try {
+      const result = await generateBlockLayout(prompt, container.type, container.blocks);
+      store.regenerateBlock(blockId, result.layout, prompt);
+    } catch {
+      // Silent fail — BlockInput handles error display for user-initiated generation
+    }
+  }, [store.activeContainer, store.regenerateBlock]);
 
   const keyboardActions = useMemo(() => ({
     onCreateNextContainer: createNext,
@@ -106,9 +122,11 @@ export default function App() {
               onUpdateBlockLabel={store.updateBlockLabel}
               onDeleteBlock={store.deleteBlock}
               onDuplicateBlock={store.duplicateBlock}
-              onRepeatBlock={store.repeatBlock}
               onDismissInput={() => store.setBlockInputVisible(false)}
               onReorderBlocks={(newBlocks) => store.reorderBlocks(store.activeContainer!.id, newBlocks)}
+              onAddCustomBlock={store.addCustomBlock}
+              customTemplates={store.customTemplates}
+              onRegenerateBlock={handleRegenerateBlock}
             />
           )}
         </LeftPanel>

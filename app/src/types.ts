@@ -34,7 +34,8 @@ export type BlockType =
   | 'service-nav'
   | 'gds-footer'
   | 'form'
-  | 'question';
+  | 'question'
+  | 'custom';
 
 export interface BlockTypeInfo {
   type: BlockType;
@@ -44,11 +45,35 @@ export interface BlockTypeInfo {
   isMacro: boolean;
 }
 
+export interface CustomPrimitive {
+  type: string;
+  label?: string;
+  value?: string;
+  height?: number;
+  width?: number;
+  color?: 'grey' | 'blue' | 'green' | 'red';
+  columns?: string[];
+  rows?: number;
+  items?: CustomPrimitive[];
+  text?: string;
+}
+
+export type CustomLayout = CustomPrimitive[];
+
+export interface CustomTemplate {
+  id: string;
+  label: string;
+  layout: CustomLayout;
+  prompt: string;
+}
+
 export interface Block {
   id: string;
   type: BlockType;
   label: string;
   options?: string[];
+  customLayout?: CustomLayout;
+  customPrompt?: string;
 }
 
 export interface Container {
