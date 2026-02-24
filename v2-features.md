@@ -3,7 +3,7 @@
 **Status:** Partially shipped
 **Depends on:** v1 (PRD.md) fully shipped
 
-> **Note:** The `remove <block-type>` command was originally considered here but has been shipped as part of the core block input (Phase 8 in build-plan.md). Block reordering (Section 1) has also shipped. Section 2 (AI Block Generation) remains unimplemented.
+> **Note:** The `remove <block-type>` command was originally considered here but has been shipped as part of the core block input (Phase 8 in build-plan.md). Block reordering (Section 1) has also shipped. Section 2 (AI Block Generation using `describe`) was superseded — the `generate` keyword approach ships custom AI blocks instead (see PRD.md). Sections 3 and 4 (Emmet expansion + Tab completion) have shipped as Phase 11.
 
 ---
 
@@ -53,7 +53,13 @@ moveBlock(containerId: string, blockId: string, direction: 'up' | 'down'): void
 
 ---
 
-## 2) AI Block Generation
+## 2) AI Block Generation ⚠️ Superseded
+
+> The `describe` keyword approach below was never implemented. The shipped version uses a `generate` keyword (appended to a description) to trigger AI custom block generation via the Claude API. See the existing `BlockInput` component and `generateBlock.ts`. The spec below is retained for historical reference only.
+
+---
+
+### Original spec (not implemented as written)
 
 Users can summon an AI agent directly from the block input to generate the next block (or sequence of blocks) from a natural language description.
 
@@ -155,28 +161,86 @@ Duration:      --duration-normal (120ms) per block
 
 ---
 
-## 3) Updated keyboard shortcuts (v2 additions)
+## 3) Emmet-style Block Expansion ✅ Shipped
+
+Users can add multiple blocks in a single Enter press using a `>`-separated shorthand expression.
+
+### 3.1 Syntax
+
+```
+<block> > <block> > <block> *N > <block>
+```
+
+- `>` separates blocks (sequence, not nesting)
+- `*N` repeats the preceding block N times (max 10)
+- Block names are fuzzy-matched (same logic as the autocomplete dropdown)
+- Spaces within a name are fine: `body text` → `body-text`
+- Space around `*` is optional: `radios*2` or `radios *2`
+- Macro blocks expand as usual: `form` inside an Emmet sequence → h1 + text-input + button
+- Unresolvable segment names are silently skipped; a sequence with zero resolvable segments is a no-op
+
+**Trigger:** input contains `>`. Checked before generate/remove modes.
+
+### 3.2 UX
+
+- A hint appears below the input as the user types, showing the resolved sequence: `→ h1 · body-text · radios · radios · button`
+- Autocomplete dropdown and "no match" hint are suppressed while in Emmet mode
+- Press Enter → all blocks added, last block selected, input clears
+- If no segments resolve → nothing happens, input stays
+
+### 3.3 Store change
+
+`addBlocks(types: BlockType[]) => void` — added to `useComposerStore`. Appends all resolved blocks to the active container and selects the last one.
+
+---
+
+## 4) Tab Completion ✅ Shipped
+
+Tab provides fast keyboard-driven completion in both normal and Emmet modes.
+
+### 4.1 Normal mode (no `>`)
+
+As the user types a partial block name, a ghost text suffix appears inline after the cursor showing the top fuzzy match completion (e.g. typing `gds-he` shows `gds-he` + `ader` in muted colour). Pressing Tab accepts the suggestion, setting the input value to the full block name.
+
+**Ghost text rendering:** The input's text colour is set to `transparent`; an absolutely-positioned overlay div (same font/padding) renders the typed text in solid colour followed by the ghost suffix at 50% opacity. The caret remains visible via `caretColor`.
+
+### 4.2 Emmet mode (has `>`)
+
+| Cursor position | Tab action | Hint shown |
+|-----------------|-----------|------------|
+| Partial last segment: `h1 > bod` | Completes segment → `h1 > body-text` | `Tab → body-text` |
+| Empty last segment: `h1 > ` | Appends contextual next block → `h1 > body-text` | `Tab add body-text` |
+
+The contextual "next" suggestion is driven by a `COMMON_NEXT` map encoding typical GOV.UK page structure:
+
+```
+gds-header → phase-banner → h1 → body-text → button → gds-footer
+service-nav / back-link / breadcrumbs / error-summary / notification-banner → h1
+text inputs / radios / checkboxes / select / date-input / file-upload / summary-list / table / accordion / tabs → button
+task-list / panel / pagination → gds-footer
+```
+
+### 4.3 Keyboard shortcut added
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| `Tab` | Accept ghost completion / complete partial segment / append next block | Block input field |
+
+---
+
+## 5) Updated keyboard shortcuts (v2 additions)
 
 | Shortcut | Action | Context |
 |----------|--------|---------|
 | `Cmd+↑` / `Ctrl+↑` | Move selected block up | Block selected, not editing |
 | `Cmd+↓` / `Ctrl+↓` | Move selected block down | Block selected, not editing |
-| `Enter` | Submit AI description | Block input in AI mode |
-| `Escape` | Exit AI mode, return to normal input | Block input in AI mode |
+| `Tab` | Accept completion / complete Emmet segment / append next block | Block input field |
+| `Enter` | Submit Emmet sequence or AI generation | Block input |
+| `Escape` | Cancel AI generation | Block input in AI mode |
 
 ---
 
-## 4) State shape additions (v2)
-
-```
-// Added to useComposerStore
-blockInputMode: 'normal' | 'ai'    // current input mode
-aiGenerating: boolean               // true while waiting for AI response
-```
-
----
-
-## 5) Future considerations (beyond v2)
+## 6) Future considerations (beyond v2)
 
 - **Batch undo** — Cmd+Z after AI generation reverts all generated blocks in one step
 - **AI refinement** — select existing blocks and type "describe" to have the AI modify or replace them

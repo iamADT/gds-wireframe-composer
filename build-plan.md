@@ -104,3 +104,26 @@
 - [x] Preview frame widened from 640px to 1024px (matching desktop GOV.UK page width)
 - [x] Full-bleed layout rule: `gds-header`, `service-nav`, `gds-footer` span full 1024px
 - [x] All other blocks wrapped in `max-width: 960px, margin: 0 auto` (GDS `govuk-width-container` equivalent)
+
+## Phase 11: Emmet Expansion + Tab Completion ✅
+
+### Emmet-style multi-block expansion
+- [x] `>` separator triggers Emmet mode (checked before generate/remove modes)
+- [x] `parseEmmet(input)` splits on `>`, resolves each segment via fuzzy match, returns `BlockType[]`
+- [x] `*N` repeat syntax (e.g. `radios *2`) — capped at 10; space around `*` is optional
+- [x] Unresolvable segments silently skipped; empty result is a no-op (input stays)
+- [x] Macro blocks expand as usual within an Emmet sequence
+- [x] `addBlocks(types: BlockType[])` store action — appends all resolved blocks, selects last
+- [x] Resolved sequence hint shown below input: `→ h1 · body-text · radios · radios · button`
+- [x] Autocomplete dropdown suppressed in Emmet mode
+- [x] "No match" hint suppressed in Emmet mode
+
+### Tab completion
+- [x] `computeTabCompletion(value)` returns one of three modes:
+  - `inline` — normal mode: ghost suffix of top fuzzy match
+  - `emmet-complete` — partial last segment completed to top match
+  - `emmet-next` — empty last segment: appends contextual next block from `COMMON_NEXT` map
+- [x] `COMMON_NEXT` map encodes GOV.UK page structure (gds-header → phase-banner → h1 → body-text → button → gds-footer etc.)
+- [x] Ghost text overlay in normal mode: input text transparent + absolutely-positioned div shows typed text + ghost suffix at 50% opacity
+- [x] Tab hint (`Tab add <block>` / `Tab → <block>`) shown below Emmet hint
+- [x] Tab key in `handleKeyDown` prevents default and sets value to `tabCompletion.replacement`

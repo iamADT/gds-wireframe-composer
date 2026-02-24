@@ -145,6 +145,8 @@ In the preview, users can:
 Block operations:
 
 - **Add** — Type a block name into the block input and press Enter. A new empty input appears below, ready for the next block. Supports fuzzy matching. The placeholder cycles contextually — the first input shows `try "gds-header"`, the second shows `try "service-nav"`, then cycles through other GDS types.
+- **Emmet expansion** — Type a `>`-separated sequence and press Enter to add multiple blocks at once. `*N` repeats a block N times (capped at 10). Macro blocks expand as normal. Unresolvable segment names are silently skipped. A preview hint below the input shows the resolved block sequence as you type (e.g. `→ h1 · body-text · radios · radios · button`). Example: `h1 > body text > radios *2 > button`.
+- **Tab completion** — Press Tab to accept the top autocomplete suggestion. In normal mode an inline ghost text suffix appears after the cursor showing the predicted completion; Tab accepts it. In Emmet mode, Tab either completes a partial last segment (e.g. `h1 > bod` → `h1 > body-text`) or appends the contextual next block when the cursor is after a bare `>` (e.g. `h1 >` → `h1 > body-text`). A `Tab` hint is shown below the input indicating what will be appended.
 - **Remove** — Type `remove <block-type>` (e.g. `remove header`) and press Enter. Removes the last block of that type in the active container. The dropdown filters to only block types currently present, with red destructive styling. If the type isn't present, no action is taken.
 - **Select** — Click or arrow-key to a block; selection syncs between composer and preview.
 - **Edit label** — Double-click the label text in the composer or double-click text in the preview; confirm with Enter, cancel with Escape.
@@ -267,7 +269,8 @@ The application is designed to be operated primarily from the keyboard.
 
 | Shortcut | Action | Context |
 |----------|--------|---------|
-| `Enter` | Add the typed block (or remove in remove mode) and reveal next input | Block input field |
+| `Enter` | Add the typed block (or Emmet sequence, or remove in remove mode) | Block input field |
+| `Tab` | Accept inline ghost completion (normal mode) or complete/append next block (Emmet mode) | Block input field |
 | `Escape` | Clear text or dismiss empty input | Block input field |
 | `↑` / `↓` | Navigate autocomplete suggestions | Block input with suggestions visible |
 | `Cmd+Enter` / `Ctrl+Enter` | Create a new screen container | Global |

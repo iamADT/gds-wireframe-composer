@@ -117,6 +117,7 @@ export default function App() {
               selectedBlockId={store.selectedBlockId}
               blockInputVisible={store.blockInputVisible}
               onAddBlock={store.addBlock}
+              onAddBlocks={store.addBlocks}
               onRemoveBlock={store.removeLastBlockOfType}
               onSelectBlock={store.setSelectedBlock}
               onUpdateBlockLabel={store.updateBlockLabel}

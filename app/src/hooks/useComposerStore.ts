@@ -58,6 +58,7 @@ export interface ComposerStore {
   switchContainerType: (id: string) => void;
 
   addBlock: (blockType: BlockType) => void;
+  addBlocks: (types: BlockType[]) => void;
   removeLastBlockOfType: (blockType: BlockType) => void;
   updateBlockLabel: (blockId: string, label: string) => void;
   updateBlockOptions: (blockId: string, options: string[]) => void;
@@ -153,6 +154,35 @@ export function useComposerStore(): ComposerStore {
 
     const lastBlock = newBlocks[newBlocks.length - 1];
     setSelectedBlockId(lastBlock.id);
+    setBlockInputValue('');
+  }, [activeContainerId]);
+
+  const addBlocks = useCallback((types: BlockType[]) => {
+    const newBlocks: Block[] = types.flatMap((type) => {
+      const info = BLOCK_TYPES.find((b) => b.type === type);
+      if (!info) return [];
+      return info.isMacro
+        ? expandMacro(type)
+        : [{
+            id: nanoid(),
+            type,
+            label: info.defaultLabel,
+            ...(type === 'radios' ? { options: ['England', 'Scotland', 'Wales'] } : {}),
+            ...(type === 'accordion' ? { options: ['Section 1', 'Section 2', 'Section 3'] } : {}),
+            ...(type === 'tabs' ? { options: ['Tab 1', 'Tab 2', 'Tab 3'] } : {}),
+            ...(type === 'task-list' ? { options: ['Check eligibility', 'Prepare documents', 'Submit application'] } : {}),
+            ...(type === 'service-nav' ? { options: [] } : {}),
+          }];
+    });
+    if (newBlocks.length === 0) return;
+    setContainers((prev) =>
+      prev.map((c) =>
+        c.id === activeContainerId
+          ? { ...c, blocks: [...c.blocks, ...newBlocks] }
+          : c
+      )
+    );
+    setSelectedBlockId(newBlocks[newBlocks.length - 1].id);
     setBlockInputValue('');
   }, [activeContainerId]);
 
@@ -289,6 +319,7 @@ export function useComposerStore(): ComposerStore {
     switchContainerType,
 
     addBlock,
+    addBlocks,
     removeLastBlockOfType,
     updateBlockLabel,
     updateBlockOptions,

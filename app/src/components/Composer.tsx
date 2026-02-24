@@ -50,6 +50,7 @@ interface Props {
   selectedBlockId: string | null;
   blockInputVisible: boolean;
   onAddBlock: (type: BlockType) => void;
+  onAddBlocks: (types: BlockType[]) => void;
   onRemoveBlock: (type: BlockType) => void;
   onSelectBlock: (id: string | null) => void;
   onUpdateBlockLabel: (id: string, label: string) => void;
@@ -67,6 +68,7 @@ export default function Composer({
   selectedBlockId,
   blockInputVisible,
   onAddBlock,
+  onAddBlocks,
   onRemoveBlock,
   onSelectBlock,
   onUpdateBlockLabel,
@@ -137,6 +139,7 @@ export default function Composer({
             >
               <BlockInput
                 onAdd={onAddBlock}
+                onAddBlocks={onAddBlocks}
                 onRemove={onRemoveBlock}
                 existingBlocks={container.blocks}
                 onDismiss={onDismissInput}

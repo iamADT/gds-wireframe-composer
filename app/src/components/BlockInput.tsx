@@ -6,6 +6,7 @@ import ApiKeyModal from './ApiKeyModal';
 
 interface Props {
   onAdd: (type: BlockType) => void;
+  onAddBlocks: (types: BlockType[]) => void;
   onRemove: (type: BlockType) => void;
   existingBlocks: Block[];
   onDismiss: () => void;
@@ -13,6 +14,109 @@ interface Props {
   onAddCustomBlock: (label: string, layout: CustomLayout, prompt: string) => void;
   customTemplates: CustomTemplate[];
   containerType: ContainerType;
+}
+
+function resolveBlockType(text: string): BlockType | null {
+  const q = text.toLowerCase().trim();
+  if (!q) return null;
+  const exact = BLOCK_TYPES.find((b) => b.type === q);
+  if (exact) return exact.type as BlockType;
+  const fuzzy = fuzzyMatch(q, BLOCK_TYPES);
+  return fuzzy.length > 0 ? fuzzy[0].type as BlockType : null;
+}
+
+function parseEmmet(input: string): BlockType[] {
+  return input
+    .split('>')
+    .flatMap((seg) => {
+      seg = seg.trim();
+      const repeatMatch = seg.match(/^(.+?)\s*\*\s*(\d+)$/);
+      const text = repeatMatch ? repeatMatch[1].trim() : seg;
+      const count = repeatMatch ? Math.min(parseInt(repeatMatch[2]), 10) : 1;
+      const type = resolveBlockType(text);
+      if (!type) return [];
+      return Array(count).fill(type) as BlockType[];
+    });
+}
+
+const COMMON_NEXT: Partial<Record<BlockType, BlockType>> = {
+  'gds-header':          'phase-banner',
+  'phase-banner':        'h1',
+  'service-nav':         'h1',
+  'back-link':           'h1',
+  'breadcrumbs':         'h1',
+  'error-summary':       'h1',
+  'notification-banner': 'h1',
+  'h1':                  'body-text',
+  'h2':                  'body-text',
+  'h3':                  'body-text',
+  'body-text':           'button',
+  'inset-text':          'button',
+  'warning-text':        'button',
+  'text-input':          'button',
+  'textarea':            'button',
+  'radios':              'button',
+  'checkboxes':          'button',
+  'select':              'button',
+  'date-input':          'button',
+  'file-upload':         'button',
+  'summary-list':        'button',
+  'table':               'button',
+  'accordion':           'button',
+  'tabs':                'button',
+  'task-list':           'gds-footer',
+  'panel':               'gds-footer',
+  'button':              'gds-footer',
+  'button-secondary':    'gds-footer',
+  'button-warning':      'gds-footer',
+  'pagination':          'gds-footer',
+};
+
+type TabCompletion =
+  | { mode: 'inline'; replacement: string; ghost: string }
+  | { mode: 'emmet-complete'; replacement: string; hint: string }
+  | { mode: 'emmet-next'; replacement: string; hint: string };
+
+function computeTabCompletion(value: string): TabCompletion | null {
+  if (!value.trim()) return null;
+
+  if (value.includes('>')) {
+    const lastSepIdx = value.lastIndexOf('>');
+    const afterSep = value.slice(lastSepIdx + 1);
+    const afterSepTrimmed = afterSep.trim();
+
+    if (!afterSepTrimmed) {
+      const resolvedSoFar = parseEmmet(value.slice(0, lastSepIdx));
+      const lastType = resolvedSoFar[resolvedSoFar.length - 1];
+      const next = lastType ? (COMMON_NEXT[lastType] ?? null) : null;
+      if (next) {
+        return { mode: 'emmet-next', replacement: value.trimEnd() + ' ' + next, hint: next };
+      }
+      return null;
+    } else {
+      const type = resolveBlockType(afterSepTrimmed);
+      if (type && type !== afterSepTrimmed) {
+        const prefix = value.slice(0, lastSepIdx + 1);
+        const leadingSpace = afterSep.match(/^(\s*)/)?.[1] ?? ' ';
+        return {
+          mode: 'emmet-complete',
+          replacement: prefix + (leadingSpace || ' ') + type,
+          hint: type,
+        };
+      }
+      return null;
+    }
+  } else {
+    const q = value.toLowerCase().trim();
+    if (!q) return null;
+    const matches = fuzzyMatch(q, BLOCK_TYPES);
+    if (matches.length > 0 && matches[0].type !== q) {
+      const ghost = matches[0].type.slice(q.length);
+      if (!ghost) return null;
+      return { mode: 'inline', replacement: matches[0].type, ghost };
+    }
+    return null;
+  }
 }
 
 const REMOVE_RE = /^remove\s*/i;
@@ -66,6 +170,7 @@ function GeneratingDots() {
 
 export default function BlockInput({
   onAdd,
+  onAddBlocks,
   onRemove,
   existingBlocks,
   onDismiss,
@@ -84,10 +189,12 @@ export default function BlockInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const isRemoveMode = REMOVE_RE.test(value);
+  const isEmmetMode = value.includes('>');
+  const isRemoveMode = !isEmmetMode && REMOVE_RE.test(value);
+  const tabCompletion = !generating ? computeTabCompletion(value) : null;
   const subQuery = isRemoveMode ? value.replace(REMOVE_RE, '') : value;
 
-  const isGenerateMode = /\bgenerate\s*$/i.test(value) && value.trim().replace(/generate\s*$/i, '').trim().length > 0;
+  const isGenerateMode = !isEmmetMode && /\bgenerate\s*$/i.test(value) && value.trim().replace(/generate\s*$/i, '').trim().length > 0;
   const description = value.trim().replace(/\bgenerate\s*$/i, '').trim();
 
   const presentTypes = new Set(existingBlocks.map((b) => b.type));
@@ -108,6 +215,7 @@ export default function BlockInput({
     suggestions.length === 0 &&
     matchedCustomTemplates.length === 0 &&
     !isGenerateMode &&
+    !isEmmetMode &&
     !generating;
 
   const placeholder = PLACEHOLDER_SUGGESTIONS[placeholderIndex % PLACEHOLDER_SUGGESTIONS.length];
@@ -160,6 +268,15 @@ export default function BlockInput({
   const handleSubmit = useCallback(() => {
     if (generating) return;
 
+    if (isEmmetMode) {
+      const types = parseEmmet(value);
+      if (types.length > 0) {
+        onAddBlocks(types);
+        setValue('');
+      }
+      return;
+    }
+
     if (isGenerateMode) {
       const key = getApiKey();
       if (!key) {
@@ -210,14 +327,19 @@ export default function BlockInput({
       setValue('');
     }
   }, [
-    value, isRemoveMode, isGenerateMode, description, generating, subQuery,
+    value, isEmmetMode, isRemoveMode, isGenerateMode, description, generating, subQuery,
     removableCandidates, suggestions, matchedCustomTemplates, highlightIndex,
-    onAdd, onRemove, onAddCustomBlock, runGeneration,
+    onAdd, onAddBlocks, onRemove, onAddCustomBlock, runGeneration,
   ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (tabCompletion) {
+          setValue(tabCompletion.replacement);
+        }
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         handleSubmit();
       } else if (e.key === 'Escape') {
@@ -241,7 +363,7 @@ export default function BlockInput({
         setHighlightIndex((prev) => Math.max(prev - 1, 0));
       }
     },
-    [handleSubmit, value, onDismiss, generating, genError, totalSuggestions]
+    [handleSubmit, value, onDismiss, generating, genError, totalSuggestions, tabCompletion]
   );
 
   const handleKeySaved = useCallback((key: string) => {
@@ -268,9 +390,13 @@ export default function BlockInput({
       ? 'inset 0 0 0 1px rgba(255,80,80,0.12)'
       : 'inset 0 0 0 1px var(--border-inner), inset 0 1px 0 0 var(--tint-blue)';
 
+  const showGhost = tabCompletion?.mode === 'inline' && !generating;
+
   const inputColor = generating
     ? 'var(--text-tertiary)'
-    : 'var(--text-primary)';
+    : showGhost
+      ? 'transparent'
+      : 'var(--text-primary)';
 
   // What to show in the input field
   const displayValue = generating ? (description || value) : value;
@@ -308,12 +434,34 @@ export default function BlockInput({
               background: inputBackground,
               border: inputBorder,
               color: inputColor,
+              caretColor: 'var(--text-primary)',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
               boxShadow: inputBoxShadow,
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             }}
           />
+          {showGhost && tabCompletion?.mode === 'inline' && (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                padding: '8px 16px',
+                fontSize: '0.875rem',
+                lineHeight: 'normal',
+                fontFamily: 'inherit',
+                pointerEvents: 'none',
+                overflow: 'hidden',
+                whiteSpace: 'pre',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ color: 'var(--text-primary)' }}>{value}</span>
+              <span style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}>{tabCompletion.ghost}</span>
+            </div>
+          )}
           {isGenerateMode && !generating && !genError && (
             <span
               style={{
@@ -337,6 +485,24 @@ export default function BlockInput({
           )}
         </div>
 
+        {/* Emmet hint */}
+        {isEmmetMode && (() => {
+          const types = parseEmmet(value);
+          if (types.length === 0) return null;
+          return (
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, paddingLeft: 2 }}>
+              → {types.join(' · ')}
+            </div>
+          );
+        })()}
+        {/* Emmet Tab hint */}
+        {isEmmetMode && tabCompletion && tabCompletion.mode !== 'inline' && (
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, paddingLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <kbd style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'inherit', lineHeight: '16px' }}>Tab</kbd>
+            {tabCompletion.mode === 'emmet-next' ? `add ${tabCompletion.hint}` : `→ ${tabCompletion.hint}`}
+          </div>
+        )}
+
         {/* No-match hint */}
         {showNoMatchHint && (
           <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic', marginTop: 4, paddingLeft: 2 }}>
@@ -347,7 +513,7 @@ export default function BlockInput({
         {/* Loading state */}
         {generating && (
           <div style={{ marginTop: 4, paddingLeft: 2 }}>
-            <div style={{ fontSize: 11, color: 'var(--tint-blue)', fontStyle: 'italic' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-primary)', fontStyle: 'italic' }}>
               <GeneratingDots />
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
@@ -393,7 +559,7 @@ export default function BlockInput({
         )}
 
         {/* Autocomplete dropdown */}
-        {showSuggestions && value && !generating && !genError && (suggestions.length > 0 || matchedCustomTemplates.length > 0) && (
+        {showSuggestions && value && !generating && !genError && !isEmmetMode && (suggestions.length > 0 || matchedCustomTemplates.length > 0) && (
           <div
             className="glass-elevated rounded-xl absolute left-0 right-0 z-20 overflow-hidden"
             style={{ marginTop: 4, padding: 4, maxHeight: 240, overflowY: 'auto' }}
