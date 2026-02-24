@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Preview from './Preview';
 import type { Container } from '../types';

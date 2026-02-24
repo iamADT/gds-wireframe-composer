@@ -90,8 +90,8 @@ function ConnectCanvasInner({
   const { screenToFlowPosition } = useReactFlow();
 
   // Use RF's own state so selection + keyboard deletion work correctly
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Stable refs for callbacks so effects don't re-run on every render
   const onOpenScreenRef = useRef(onOpenScreen);

@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 interface ShapeNodeData {
