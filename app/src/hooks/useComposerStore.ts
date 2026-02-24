@@ -272,14 +272,6 @@ export function useComposerStore(): ComposerStore {
     saveCustomTemplate({ id: nanoid(), label, layout, prompt });
   }, [activeContainerId, saveCustomTemplate]);
 
-  const updateBlockCustomLayout = useCallback((blockId: string, layout: CustomLayout) => {
-    setContainers((prev) =>
-      prev.map((c) => ({
-        ...c,
-        blocks: c.blocks.map((b) => (b.id === blockId ? { ...b, customLayout: layout } : b)),
-      }))
-    );
-  }, []);
 
   return {
     containers,
