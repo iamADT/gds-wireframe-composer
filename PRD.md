@@ -1,7 +1,7 @@
 # GDS Lo-Fi Composer — Product Requirements Document
 
-**Version:** 1.3
-**Date:** 2026-02-24
+**Version:** 1.4
+**Date:** 2026-02-25
 **Status:** Live
 
 ---
@@ -147,6 +147,7 @@ In the preview, users can:
 Block operations:
 
 - **Add** — Type a block name into the block input and press Enter. A new empty input appears below, ready for the next block. Supports fuzzy matching. The placeholder cycles contextually — the first input shows `try "gds-header"`, the second shows `try "service-nav"`, then cycles through other GDS types.
+- **Template keyword** — Typing `template` and pressing Enter expands to a full page scaffold: `gds-header`, `service-nav`, `back-link`, `h1` — all added in one action. An expansion hint (`→ gds-header · service-nav · back-link · h1`) appears below the input when the keyword is fully typed. Ghost-text completion is shown from `"tem"` onwards (when no block type matches the prefix).
 - **Emmet expansion** — Type a `>`-separated sequence and press Enter to add multiple blocks at once. `*N` repeats a block N times (capped at 10). Macro blocks expand as normal. Unresolvable segment names are silently skipped. A preview hint below the input shows the resolved block sequence as you type (e.g. `→ h1 · body-text · radios · radios · button`). Example: `h1 > body text > radios *2 > button`.
 - **Tab completion** — Press Tab to accept the top autocomplete suggestion. In normal mode an inline ghost text suffix appears after the cursor showing the predicted completion; Tab accepts it. In Emmet mode, Tab either completes a partial last segment (e.g. `h1 > bod` → `h1 > body-text`) or appends the contextual next block when the cursor is after a bare `>` (e.g. `h1 >` → `h1 > body-text`). A `Tab` hint is shown below the input indicating what will be appended.
 - **Remove** — Type `remove <block-type>` (e.g. `remove header`) and press Enter. Removes the last block of that type in the active container. The dropdown filters to only block types currently present, with red destructive styling. If the type isn't present, no action is taken.
@@ -333,7 +334,7 @@ Additional store mutations include: `updateBlockOptions`, `renameContainer`, `ad
 ```
 App
 ├── Left Panel (dark)
-│   ├── AppBar             — title + shortcut hints
+│   ├── AppBar             — title + About button (opens About modal via CustomEvent)
 │   ├── ContainerCreator   — view switcher (Current/Screens/Connect) + "+ New screen" button
 │   ├── ContainerList      — sidebar of screens/modals with inline rename (view = "screens")
 │   ├── ConnectSidebar     — "Screens to place" cards + "Screens on canvas" list + shapes (view = "connect")

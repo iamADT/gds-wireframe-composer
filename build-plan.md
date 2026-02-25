@@ -127,3 +127,19 @@
 - [x] Ghost text overlay in normal mode: input text transparent + absolutely-positioned div shows typed text + ghost suffix at 50% opacity
 - [x] Tab hint (`Tab add <block>` / `Tab → <block>`) shown below Emmet hint
 - [x] Tab key in `handleKeyDown` prevents default and sets value to `tabCompletion.replacement`
+
+## Phase 12: Template Keyword + About Modal ✅
+
+### Template keyword expansion
+- [x] `template` keyword detected in `BlockInput` (`isTemplateMode` flag)
+- [x] Typing `template` + Enter expands to `gds-header > service-nav > back-link > h1` via `onAddBlocks`
+- [x] Expansion hint (`→ gds-header · service-nav · back-link · h1`) shown below input when keyword is fully typed
+- [x] Ghost-text completion from `"tem"` onwards as a fallback after the block-type ghost check
+- [x] "No match — append generate" hint suppressed when in template mode
+
+### About modal
+- [x] `AppBar` — "About" button top-right opens a glass modal
+- [x] Modal content: app name, "Created by Tolu Alder", 5 actionable "Try…" tips with quoted keywords
+- [x] Modal closes on backdrop click or ✕ button
+- [x] `AppBar` listens for `CustomEvent('open-about')` on `window` so the modal can be triggered from anywhere
+- [x] Empty-state `AppDescription` in `Preview` shows a "Learn more →" link below the ghost wireframe; dispatches `open-about` event on click

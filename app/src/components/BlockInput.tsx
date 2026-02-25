@@ -16,6 +16,9 @@ interface Props {
   containerType: ContainerType;
 }
 
+const TEMPLATE_KEYWORD = 'template';
+const TEMPLATE_BLOCKS: BlockType[] = ['gds-header', 'service-nav', 'back-link', 'h1'];
+
 function resolveBlockType(text: string): BlockType | null {
   const q = text.toLowerCase().trim();
   if (!q) return null;
@@ -115,6 +118,10 @@ function computeTabCompletion(value: string): TabCompletion | null {
       if (!ghost) return null;
       return { mode: 'inline', replacement: matches[0].type, ghost };
     }
+    // Template keyword ghost (fallback when no block type matches)
+    if (q.length >= 2 && TEMPLATE_KEYWORD.startsWith(q) && q !== TEMPLATE_KEYWORD) {
+      return { mode: 'inline', replacement: TEMPLATE_KEYWORD, ghost: TEMPLATE_KEYWORD.slice(q.length) };
+    }
     return null;
   }
 }
@@ -191,6 +198,7 @@ export default function BlockInput({
 
   const isEmmetMode = value.includes('>');
   const isRemoveMode = !isEmmetMode && REMOVE_RE.test(value);
+  const isTemplateMode = !isEmmetMode && !isRemoveMode && value.trim().toLowerCase() === TEMPLATE_KEYWORD;
   const tabCompletion = !generating ? computeTabCompletion(value) : null;
   const subQuery = isRemoveMode ? value.replace(REMOVE_RE, '') : value;
 
@@ -216,6 +224,7 @@ export default function BlockInput({
     matchedCustomTemplates.length === 0 &&
     !isGenerateMode &&
     !isEmmetMode &&
+    !isTemplateMode &&
     !generating;
 
   const placeholder = PLACEHOLDER_SUGGESTIONS[placeholderIndex % PLACEHOLDER_SUGGESTIONS.length];
@@ -277,6 +286,12 @@ export default function BlockInput({
       return;
     }
 
+    if (isTemplateMode) {
+      onAddBlocks(TEMPLATE_BLOCKS);
+      setValue('');
+      return;
+    }
+
     if (isGenerateMode) {
       const key = getApiKey();
       if (!key) {
@@ -327,7 +342,7 @@ export default function BlockInput({
       setValue('');
     }
   }, [
-    value, isEmmetMode, isRemoveMode, isGenerateMode, description, generating, subQuery,
+    value, isEmmetMode, isRemoveMode, isTemplateMode, isGenerateMode, description, generating, subQuery,
     removableCandidates, suggestions, matchedCustomTemplates, highlightIndex,
     onAdd, onAddBlocks, onRemove, onAddCustomBlock, runGeneration,
   ]);
@@ -500,6 +515,13 @@ export default function BlockInput({
           <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, paddingLeft: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
             <kbd style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'inherit', lineHeight: '16px' }}>Tab</kbd>
             {tabCompletion.mode === 'emmet-next' ? `add ${tabCompletion.hint}` : `→ ${tabCompletion.hint}`}
+          </div>
+        )}
+
+        {/* Template expansion hint */}
+        {isTemplateMode && (
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4, paddingLeft: 2 }}>
+            → {TEMPLATE_BLOCKS.join(' · ')}
           </div>
         )}
 

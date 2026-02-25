@@ -225,6 +225,23 @@ export default function Preview({ container, selectedBlockId, onSelectBlock, onU
       <div className="flex flex-col" style={{ gap: 0 }}>
         <AppDescription />
         <GhostWireframe />
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-about'))}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '16px 0 0',
+            cursor: 'pointer',
+            fontSize: 13,
+            color: '#ffffff',
+            textDecoration: 'underline',
+            textDecorationColor: 'rgba(255,255,255,0.45)',
+            fontFamily: 'inherit',
+            alignSelf: 'flex-start',
+          }}
+        >
+          Learn more →
+        </button>
       </div>
     );
   }
