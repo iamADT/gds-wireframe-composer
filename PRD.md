@@ -334,7 +334,7 @@ Additional store mutations include: `updateBlockOptions`, `renameContainer`, `ad
 ```
 App
 ├── Left Panel (dark)
-│   ├── AppBar             — title + About button (opens About modal via CustomEvent)
+│   ├── AppBar             — title + Components button + About button; Components opens ComponentsPage (fixed full-viewport overlay)
 │   ├── ContainerCreator   — view switcher (Current/Screens/Connect) + "+ New screen" button
 │   ├── ContainerList      — sidebar of screens/modals with inline rename (view = "screens")
 │   ├── ConnectSidebar     — "Screens to place" cards + "Screens on canvas" list + shapes (view = "connect")
@@ -347,6 +347,13 @@ App
     └── Preview            — live wireframe canvas with inline text editing
         ├── BrowserChrome  — mock browser URL bar (service.gov.uk/...)
         └── WireBlock      — renders individual GDS block types
+
+ComponentsPage  [fixed full-viewport overlay, z-index 150 — triggered from AppBar "Components" button]
+├── Header bar         — "← Back" button + "Components" title + count pill (filters live with search)
+├── Search bar         — glass-styled input, filters all cards by name in real time, ✕ clear button
+└── Bento grid         — CSS grid, 3 columns max, grid-auto-flow: dense; each cell:
+    ├── Outer frame    — glass bevel border (--border-outer + --border-inner inset), 8px padding, hover: lift + shadow
+    └── Inner white box — white bg, border-radius 6px, overflow hidden; name label top-left + WireBlock preview
 
 ConnectCanvas  [replaces Right Panel when view = "connect"]
 ├── ReactFlow

@@ -143,3 +143,16 @@
 - [x] Modal closes on backdrop click or ✕ button
 - [x] `AppBar` listens for `CustomEvent('open-about')` on `window` so the modal can be triggered from anywhere
 - [x] Empty-state `AppDescription` in `Preview` shows a "Learn more →" link below the ghost wireframe; dispatches `open-about` event on click
+
+## Phase 13: Components Gallery ✅
+
+- [x] `AppBar` — "Components" button added to the left of "About"; manages `showComponents` local state; renders `<ComponentsPage />` when active
+- [x] `ComponentsPage` — fixed full-viewport overlay (`position: fixed; inset: 0; z-index: 150`); `position: fixed` overlay covers the full viewport
+- [x] Header bar — "← Back" button closes the page; "Components" title; count pill updates live to reflect filtered results
+- [x] Search bar — glass-styled input (matches app design tokens); filters all 32 components by name in real time; ✕ clear button; "No components match" empty state
+- [x] Bento grid — `grid-template-columns: repeat(3, 1fr); grid-auto-flow: dense; gap: 12px`; colSpan 1/2/3 per component; uniform `CARD_H = 180px` row height
+- [x] Card structure — outer glass-bevel frame (8px padding, `--border-outer` + `--border-inner` inset box-shadow) wrapping inner white box (border-radius 6px, overflow hidden)
+- [x] Component name — rendered inside the cell, top-left, 10px semibold at `rgba(0,0,0,0.35)`
+- [x] WireBlock preview — actual live GOV.UK component rendered inside the white box; `pointer-events: none; user-select: none` (display only)
+- [x] Hover effect — outer frame lifts `translateY(-3px) scale(1.012)`, shadow deepens, bevel brightens; `140ms ease-out` transition
+- [x] Mock blocks — 32 components with correct default labels and `options[]` (radios, accordion, tabs, task-list, service-nav); macros (`form`, `question`) and `custom` excluded

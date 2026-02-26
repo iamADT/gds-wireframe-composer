@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ComponentsPage from './ComponentsPage';
 
 const FEATURES = [
   { icon: '⬜', text: 'Try typing "h1" or "radios" in the block input to instantly add a GDS component' },
@@ -86,6 +87,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 
 export default function AppBar() {
   const [showAbout, setShowAbout] = useState(false);
+  const [showComponents, setShowComponents] = useState(false);
 
   useEffect(() => {
     const handler = () => setShowAbout(true);
@@ -116,6 +118,21 @@ export default function AppBar() {
         </div>
         <div className="flex items-center" style={{ gap: 8 }}>
           <button
+            onClick={() => setShowComponents(true)}
+            style={{
+              background: 'var(--glass-surface-2)',
+              border: '1px solid var(--border-outer)',
+              borderRadius: 6,
+              color: 'var(--text-secondary)',
+              fontSize: 12,
+              cursor: 'pointer',
+              padding: '4px 10px',
+              lineHeight: 1,
+            }}
+          >
+            Components
+          </button>
+          <button
             onClick={() => setShowAbout(true)}
             style={{
               background: 'var(--glass-surface-2)',
@@ -134,6 +151,7 @@ export default function AppBar() {
       </header>
 
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showComponents && <ComponentsPage onClose={() => setShowComponents(false)} />}
     </>
   );
 }
